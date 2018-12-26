@@ -1,0 +1,73 @@
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.*;
+
+
+
+
+public class MusicAdd extends JFrame implements ActionListener{
+	Table t = new Table();
+	JButton btn1;	//추가
+	JButton btn2;	//종료
+	JTextField tf1;
+	JTextField tf2;
+	JTextField tf3;
+	
+	public MusicAdd() {
+		this.setSize(300,150);
+		this.setResizable(false);
+		setTitle("음악관리");		
+		
+		Container pane = getContentPane();
+		JPanel p1 = new JPanel(new GridLayout(3,2));
+		JPanel p2 = new JPanel(new FlowLayout(FlowLayout.CENTER,80,0));
+		
+		pane.add(p1, BorderLayout.CENTER);
+		pane.add(p2, BorderLayout.SOUTH);
+		
+		JLabel l1 = new JLabel("가수");
+		JLabel l2 = new JLabel("제목");
+		JLabel l3 = new JLabel("장르");
+		l1.setHorizontalAlignment(0);
+		l2.setHorizontalAlignment(0);
+		l3.setHorizontalAlignment(0);
+		
+		tf1 = new JTextField();
+		tf2 = new JTextField();
+		tf3 = new JTextField();
+		
+		p1.add(l1);
+		p1.add(tf1);		
+		p1.add(l2);
+		p1.add(tf2);		
+		p1.add(l3);
+		p1.add(tf3);
+		
+		btn1 = new JButton("등록");
+		btn2 = new JButton("취소");
+		p2.add(btn1);
+		p2.add(btn2);
+		
+		btn1.addActionListener(this);
+		btn2.addActionListener(this);
+		setVisible(true);
+		
+	}
+	public void actionPerformed(ActionEvent e) {
+			JButton b = (JButton)e.getSource();
+			if(b==btn1) {
+				t.connect();
+				t.musicAdd(tf1, tf2, tf3);
+				t.close();
+				tf1.setText("");
+				tf2.setText("");
+				tf3.setText("");
+			}
+			if(b==btn2) {
+				this.dispose();
+			}
+	}
+}
