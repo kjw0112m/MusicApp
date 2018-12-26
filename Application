@@ -1,0 +1,189 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.sql.SQLException;
+
+import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.table.*;
+
+
+
+public class Application extends JFrame implements ActionListener {
+
+	JButton musicB;
+	JButton uListB;
+	JButton deleteB;
+	JButton mListB;
+	JButton applyB;
+	JPanel p;
+	JScrollPane spUser;
+	JPanel pTable;
+	JScrollPane spMusic;
+	DefaultTableModel modelUser;
+	DefaultTableModel modelMusic;
+
+	JTable tableMusic;
+	JTable tableUser;
+	Table t = new Table();
+
+	public Application(String title) throws SQLException {
+		this.setSize(450, 600);
+		this.setResizable(false);
+		this.setTitle(title);
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		this.tableUpdate();// JTable과 데이터베이스 연동
+
+		// 패널 및 컴포넌트 배치
+		Container pane = getContentPane();
+
+		p = new JPanel(new GridLayout(2, 1));
+
+		pTable = new JPanel(new BorderLayout());
+		pTable.setBorder(new TitledBorder("목록"));
+
+		pane.add(p, BorderLayout.CENTER);
+
+		JPanel pMenu = new JPanel(new GridLayout(2, 1));
+		pMenu.setBorder(new TitledBorder("관리 메뉴"));
+
+		JPanel pMusic = new JPanel();
+		JPanel pUser = new JPanel();
+		pMusic.setLayout(null);
+		pUser.setLayout(null);
+		pMusic.setBorder(new TitledBorder("음악"));
+		pUser.setBorder(new TitledBorder("회원"));
+
+		p.add(pMenu);
+		p.add(pTable);
+
+		pMenu.add(pMusic);
+		pMenu.add(pUser);
+
+		musicB = new JButton("음악 등록");
+		musicB.setBounds(20, 40, 100, 50);
+		mListB = new JButton("음악 목록");
+		mListB.setBounds(170, 40, 100, 50);
+		deleteB = new JButton("삭제");
+		deleteB.setBounds(320, 40, 100, 50);
+
+		uListB = new JButton("회원목록");
+		uListB.setBounds(80, 50, 100, 50);
+
+		applyB = new JButton("프리미엄 변경");
+		applyB.setBounds(230, 50, 150, 50);
+
+		pMusic.add(musicB);
+		pMusic.add(mListB);
+		pMusic.add(deleteB);
+		pUser.add(uListB);
+		pUser.add(applyB);
+
+		// 액션이벤트 추가
+		uListB.addActionListener(this);
+		deleteB.addActionListener(this);
+		mListB.addActionListener(this);
+		musicB.addActionListener(this);
+		applyB.addActionListener(this);
+
+		// 테이블 가운데정렬
+		this.sort();
+
+		setVisible(true);
+	}
+
+	public void actionPerformed(ActionEvent e) {
+		JButton b = (JButton) e.getSource();
+
+		if (b == uListB) {
+			pTable.removeAll();
+			pTable.setVisible(false);
+			pTable.add(spUser);
+			pTable.setVisible(true);
+		} else if (b == deleteB) {
+			int row = tableMusic.getRowCount();
+			// 체크박스가 체크되어있는 음악을 삭제한다.
+			for (int i = 0; i < row; i++) {
+				if ((boolean) tableMusic.getValueAt(i, 3) == true) {
+					t.connect();
+					t.delete((String) tableMusic.getValueAt(i, 0), (String) tableMusic.getValueAt(i, 1));
+					t.close();
+				}
+			}
+			try {
+				this.tableUpdate();
+				this.sort();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+			pTable.removeAll();
+			pTable.setVisible(false);
+			pTable.add(spMusic);
+			pTable.setVisible(true);
+		} else if (b == mListB) {
+			try {
+				this.tableUpdate();
+				this.sort();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+			pTable.removeAll();
+			pTable.setVisible(false);
+			pTable.add(spMusic);
+			pTable.setVisible(true);
+		} else if (b == musicB) {
+			pTable.removeAll();
+			pTable.setVisible(false);
+			pTable.setVisible(true);
+			new MusicAdd();
+
+		} else {
+			pTable.removeAll();
+			pTable.setVisible(false);
+			pTable.setVisible(true);
+
+			t.connect();
+			t.levelUp();
+			if (Table.rs == 0) {
+				JOptionPane.showMessageDialog(this, "신청한 회원이 없습니다.");
+			} else {
+				JOptionPane.showMessageDialog(this, "프리미엄 변경 완료");
+				t.levelDelete();
+			}
+			t.close();
+		}
+	}
+
+	// 데이터 업데이트
+	public void tableUpdate() throws SQLException {
+		MusicList mL = new MusicList();
+		UserList uL = new UserList();
+
+		tableUser = new JTable(uL.model);
+		tableUser.getTableHeader().setReorderingAllowed(false);
+		spUser = new JScrollPane(tableUser);
+
+		tableMusic = new JTable(mL.model);
+		tableMusic.getTableHeader().setReorderingAllowed(false);
+		spMusic = new JScrollPane(tableMusic);
+	}
+	
+	//가운데 정렬
+	public void sort() {
+		DefaultTableCellRenderer dtcr = new DefaultTableCellRenderer();
+		dtcr.setHorizontalAlignment(SwingConstants.CENTER);
+		TableColumnModel tcmMusic = tableMusic.getColumnModel();
+		TableColumnModel tcmUser = tableUser.getColumnModel();
+
+		for (int i = 0; i < tcmMusic.getColumnCount() - 1; i++) {
+			tcmMusic.getColumn(i).setCellRenderer(dtcr);
+		}
+		for (int j = 0; j < tcmUser.getColumnCount(); j++) {
+			tcmUser.getColumn(j).setCellRenderer(dtcr);
+		}
+	}
+
+	public static void main(String[] args) throws SQLException {
+		new Application("동양뮤직");
+	}
+}
