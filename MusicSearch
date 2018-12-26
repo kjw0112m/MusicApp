@@ -1,0 +1,179 @@
+
+import java.awt.*;
+import javax.swing.*;
+import javax.swing.table.*;
+
+
+
+import java.awt.event.*;
+import java.sql.SQLException;
+
+//서버가 등록한 노래목록을 보기위한 클래스
+public class MusicSearch extends MusicApp implements ActionListener, ItemListener {
+	JButton insert;
+	JButton close;
+	Table t = new Table();
+	JScrollPane sp;
+	JTable table;
+	JPanel center;
+
+	JRadioButtonMenuItem ballad;
+	JRadioButtonMenuItem all;
+	JRadioButtonMenuItem hiphop;
+	
+	public MusicSearch() throws SQLException {
+		// 메뉴 설정
+		JMenuBar mb = new JMenuBar();
+		JMenu m = new JMenu("장르");
+		ballad = new JRadioButtonMenuItem("발라드");
+		all = new JRadioButtonMenuItem("전체");
+		hiphop = new JRadioButtonMenuItem("힙합");
+		all.setSelected(true);
+		ButtonGroup g = new ButtonGroup();
+		g.add(ballad);
+		g.add(all);
+		g.add(hiphop);
+		this.setJMenuBar(mb);
+		mb.add(m);
+		m.add(all);
+		m.add(hiphop);
+		m.add(ballad);
+
+		// 프레임 및 패널 설정
+		this.setSize(350, 550);
+		this.setTitle("음악검색");
+		Container pane = this.getContentPane();
+		JPanel south = new JPanel(new FlowLayout(FlowLayout.CENTER, 100, 0));
+		center = new JPanel(new BorderLayout());
+
+		pane.add(south, BorderLayout.SOUTH);
+		pane.add(center, BorderLayout.CENTER);
+
+		insert = new JButton("추가");
+		close = new JButton("종료");
+		south.add(insert);
+		south.add(close);
+
+		this.setVisible(true);
+
+		// 첫 테이블 설정
+		MusicList mL = new MusicList();
+		table = new JTable(mL.model);
+		table.getTableHeader().setReorderingAllowed(false);
+		sp = new JScrollPane(table);
+		this.sort();
+
+		center.removeAll();
+		center.setVisible(false);
+		center.add(sp);
+		center.setVisible(true);
+
+		// 리스너 추가
+		all.addItemListener(this);
+		ballad.addItemListener(this);
+		hiphop.addItemListener(this);
+
+		insert.addActionListener(this);
+		close.addActionListener(this);
+
+	}
+	
+	// 테이블 가운데정렬
+	public void sort() {
+		DefaultTableCellRenderer dtcr = new DefaultTableCellRenderer();
+		dtcr.setHorizontalAlignment(SwingConstants.CENTER);
+		TableColumnModel tcm = table.getColumnModel();
+
+		for (int i = 0; i < tcm.getColumnCount() - 1; i++) {
+			tcm.getColumn(i).setCellRenderer(dtcr);
+		}
+	}
+
+	public void actionPerformed(ActionEvent e) {
+		JButton jb = (JButton) e.getSource();
+		MusicList mL;
+
+		if (jb == insert) {
+			int row = table.getRowCount();
+			int count = 0;
+			for (int i = 0; i < row; i++) {
+				if ((boolean) table.getValueAt(i, 3) == true) {		//체크박스가 체크되었으면
+					t.connect();
+					t.checkMusic(Login.name, (String) table.getValueAt(i, 0), (String) table.getValueAt(i, 1));
+					try {
+						if (!t.set.isBeforeFirst()) {
+							t.addList(Login.name, (String) table.getValueAt(i, 0), (String) table.getValueAt(i, 1),
+									(String) table.getValueAt(i, 2));
+						} else {
+							if (count == 0) {
+								JOptionPane.showMessageDialog(this, "이미 추가한 노래가 있습니다.");
+								count++;
+							}
+
+						}
+					} catch (HeadlessException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					} catch (SQLException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					t.close();
+				}
+			}
+		} else {
+			this.dispose();
+		}
+
+	}
+
+	public void itemStateChanged(ItemEvent e) {
+		String s = ((AbstractButton) e.getItem()).getText();
+		MusicList mL;
+		//전체 목록을 보여줌
+		if (s == "전체") {
+			System.out.println("???");
+			try {
+				mL = new MusicList();
+				table = new JTable(mL.model);
+				table.getTableHeader().setReorderingAllowed(false);	//프레임 이동불가
+				sp = new JScrollPane(table);
+				this.sort();
+				center.removeAll();
+				center.setVisible(false);
+				center.add(sp);
+				center.setVisible(true);
+
+			} catch (SQLException e1) {
+			}
+
+		} else if (s == "발라드") {	//장르가 발라드인 노래목록
+			try {
+				table = new JTable(t.ballad());
+				table.getTableHeader().setReorderingAllowed(false);
+				sp = new JScrollPane(table);
+				this.sort();
+				center.removeAll();
+				center.setVisible(false);
+				center.add(sp);
+				center.setVisible(true);
+
+			} catch (SQLException e1) {
+			}
+
+		} else if (s == "힙합") {	//장르가 힙합인 목록
+			try {
+				table = new JTable(t.hiphop());
+				table.getTableHeader().setReorderingAllowed(false);	
+				sp = new JScrollPane(table);
+				this.sort();
+				center.removeAll();
+				center.setVisible(false);
+				center.add(sp);
+				center.setVisible(true);
+			} catch (SQLException e1) {
+			}
+		}
+	}
+
+}
