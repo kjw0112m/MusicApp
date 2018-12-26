@@ -1,0 +1,36 @@
+
+import javax.swing.*;
+import javax.swing.table.*;
+
+
+
+import java.sql.*;
+
+public class UserList {
+	Table t = new Table();
+	DefaultTableModel model;
+	
+	public UserList() throws SQLException {
+		String header[] = {"이름","닉네임", "아이디", "비밀번호", "회원등급"};
+		Object contents[][] = new Object[0][4];
+		model=new DefaultTableModel(contents,header){
+			public boolean isCellEditable(int row, int column) {
+				return false;
+			}
+		};
+		
+		t.connect();
+		t.userSelect();
+		while(Table.set.next()) {
+			String name = Table.set.getString("name");
+			String nickname = Table.set.getString("nickname");
+			String id = Table.set.getString("id");
+			String pwd = Table.set.getString("pwd");
+			String level = Table.set.getString("level");
+			
+			Object data[] = {name,nickname,id,pwd,level};
+			model.addRow(data);
+		}
+		t.close();
+	}
+}
