@@ -1,0 +1,35 @@
+
+import java.sql.SQLException;
+import javax.swing.table.DefaultTableModel;
+
+
+public class PlayList {
+	Table t = new Table();
+	public DefaultTableModel model;
+	
+	//플레이 리스트를 보여주기 위해 DefaultTableModel을 정의하는 메소드
+	public PlayList() throws SQLException {
+		String header[] = {"가수", "제목"};
+		Object contents[][] = new Object[0][1];
+		model=new DefaultTableModel(contents,header)
+		{
+			public Class getColumnClass(int col) {	//자바에서 내장된 메소드로 getValueAt(0~)임으로 열값이 boolean형일시에 체크박스를 표시해줌
+				return getValueAt(0, col).getClass();
+			}
+			public boolean isCellEditable(int row, int column) {	//테이블 수정불가
+				return false;
+			}
+		};
+		t.connect();
+		t.listSelect(Login.name);
+		
+		while(Table.set.next()) {
+			String name = Table.set.getString("name");
+			String title = Table.set.getString("title");
+			Object data[] = {name,title};
+			model.addRow(data);		//행추가
+		}
+		t.close();
+	}
+}
+
