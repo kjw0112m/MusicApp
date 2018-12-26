@@ -1,0 +1,101 @@
+
+
+import java.awt.*;
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
+
+
+
+import java.awt.event.*;
+import java.io.*;
+
+//채팅방
+public class Chat extends MusicApp implements ActionListener, WindowListener, KeyListener{
+	
+	JButton send;	//전송 버튼
+	static JTextArea ta1;	//메시지 출력창
+	static JTextArea ta2;	//채팅방 참가자 목록
+	JTextField tf;			//메시지 입력창
+	public static String msg="";	//메시지를 전달하기 위한 정적 필드
+	AppClient client;
+	
+	public void chat() {
+		this.setTitle("채팅방");
+		this.setSize(600, 500);
+		this.setResizable(false);	//프레임 사이즈를 고정
+		Container pane = this.getContentPane();
+		pane.setLayout(null);	//페인 레이아웃을 null 해준다.
+		
+		JPanel center = new JPanel(new BorderLayout());
+		center.setBounds(20,10,300,360);	// (x,y,가로,세로)
+		pane.add(center);
+		center.setBorder(new TitledBorder("채팅창"));	//테두리와 제목을 설정
+		
+		JPanel east = new JPanel(new BorderLayout());
+		east.setBounds(360, 10, 200, 360);
+		pane.add(east);
+		east.setBorder(new TitledBorder("대화상대"));
+		
+		ta1 = new JTextArea();
+		ta2 = new JTextArea();
+		ta1.setEditable(false);	//TextArea 수정을 불가능하게함
+		ta2.setEditable(false);	
+		JScrollPane sp1 = new JScrollPane(ta1);	//TextArea에 스크롤을 추가함
+		JScrollPane sp2 = new JScrollPane(ta2);
+		
+		center.add(sp1);
+		east.add(sp2);
+		
+		tf = new JTextField();
+		tf.setBounds(20, 400, 300, 40);
+		pane.add(tf);
+		
+		send = new JButton("전송");
+		send.setBounds(360, 400, 90, 40);
+		pane.add(send);
+		
+		//이벤트 처리
+		send.addActionListener(this);
+		this.addWindowListener(this);
+		tf.addKeyListener(this);
+		this.setVisible(true);
+		
+	}
+	
+
+	public void actionPerformed(ActionEvent e) {
+			JButton b = (JButton)e.getSource();
+			if(b==send) {
+				msg=tf.getText();	// 메시지를 저장 후 비워줌
+				tf.setText("");
+			}
+	
+	}
+
+	public void windowActivated(WindowEvent arg0) {}
+	public void windowClosed(WindowEvent e) {}
+	public void windowClosing(WindowEvent e) {	//윈도우가 닫힐 시
+		try {
+			client.receiver.interrupt();	//클라이언트에게 인터럽트 오류 발생을 시키고
+			client.socket.close();			// 소켓을 닫음
+			
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		} catch (NullPointerException e2) {
+			this.dispose();
+		}
+	}
+	public void windowDeactivated(WindowEvent e) {}
+	public void windowDeiconified(WindowEvent e) {}
+	public void windowIconified(WindowEvent e) {}
+	public void windowOpened(WindowEvent e) {	//윈도우가 열릴 시
+		client = new AppClient(Login.name, tf, ta1, ta2);	//클라이언트 실행
+	}
+	public void keyReleased(KeyEvent e) {
+		if (e.getKeyCode() == 10) {			//엔터를 누를 시 전송 버튼 클릭
+			send.doClick();
+		}
+	}
+	
+
+}
