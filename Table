@@ -1,0 +1,337 @@
+
+import java.sql.*;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+
+//자바와 데이터베이스 연동을 위해 드라이버연결과 sql문 메소드를 작성하는 클래스
+
+public class Table extends JFrame {
+	private final String user = "root";
+	private final String password = "dytc1234";
+	private final String url = "jdbc:mysql://localhost:3306/musicapp";
+	
+	Connection con;
+	PreparedStatement pstmt;
+	public static int rs;	//정적 필드로 선언
+	public static ResultSet set;	//정적 필드로 선언
+
+	
+	// 드라이버 연결
+	public void connect() {
+		try {
+			Class.forName("com.mysql.jdbc.Driver");
+			con = DriverManager.getConnection(url, user, password);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			System.out.println("드라이버 로드 실패");
+		} catch (SQLException e) {
+			System.out.println("Connection 객체 생성 실패");
+		}
+	}
+
+	// 회원 목록
+	public void userSelect() {
+		String select = "select * from user";
+		try {
+			pstmt = con.prepareStatement(select);
+			this.set = pstmt.executeQuery();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 음악 목록
+	public void musicSelect() {
+		String select = "select * from music";
+		try {
+			pstmt = con.prepareStatement(select);
+			this.set = pstmt.executeQuery();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	// 플레이 리스트 목록
+	public void listSelect(String name) {
+		String select = "select * from " + name;
+		try {
+			pstmt = con.prepareStatement(select);
+			this.set = pstmt.executeQuery();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 음악 추가
+	public void musicAdd(JTextField tf1, JTextField tf2, JTextField tf3) {
+		String music = "insert into music values(?,?,?)";
+		try {
+			pstmt = con.prepareStatement(music);
+			pstmt.setString(1, tf1.getText());
+			pstmt.setString(2, tf2.getText());
+			pstmt.setString(3, tf3.getText());
+			rs = pstmt.executeUpdate();
+		} catch (SQLException e) {
+			System.out.println("등록 실패");
+			e.printStackTrace();
+		}
+	}
+
+	// 회원 등록
+	public void userAdd(JTextField tf1, JTextField tf2, JTextField tf3, JPasswordField pf) {
+		String user = "insert into user values(?,?,?,?,?)";
+		try {
+			pstmt = con.prepareStatement(user);
+			pstmt.setString(1, tf1.getText());
+			pstmt.setString(2, tf2.getText());
+			pstmt.setString(3, tf3.getText());
+			if (pf.getText().length() == 4) {
+				pstmt.setString(4, pf.getText());
+			} else {
+				JOptionPane.showMessageDialog(this, "비밀번호 조건이 맞지않습니다.");
+			}
+			pstmt.setString(5, "일반회원");
+			this.rs = pstmt.executeUpdate();
+		} catch (SQLException e) {
+			System.out.println("등록 실패");
+			e.printStackTrace();
+		}
+	}
+
+	// 닉네임 중복확인
+	public void checkNick(JTextField tf2) {
+		String check = "select * from user where nickname=?";
+		try {
+			pstmt = con.prepareStatement(check);
+			pstmt.setString(1, tf2.getText());
+			this.set = pstmt.executeQuery();
+		} catch (SQLException e) {
+		}
+	}
+
+	// 아이디 중복확인
+	public void checkID(JTextField tf3) {
+		String check = "select * from user where id=?";
+		try {
+			pstmt = con.prepareStatement(check);
+			pstmt.setString(1, tf3.getText());
+			this.set = pstmt.executeQuery();
+		} catch (SQLException e) {
+		}
+	}
+
+	// 플레이리스트 중복확인
+	public void checkMusic(String nickName, String name, String title) {
+		String check = "select * from " + nickName + " where name=? and title=?";
+		try {
+			pstmt = con.prepareStatement(check);
+			pstmt.setString(1, name);
+			pstmt.setString(2, title);
+			this.set = pstmt.executeQuery();
+		} catch (SQLException e) {
+		}
+	}
+
+	// 플레이 리스트 삭제
+	public void deleteList(String nickName, String name, String title) {
+		String delete = "delete from " + nickName + " where name=? and title=?";
+		try {
+			pstmt = con.prepareStatement(delete);
+			pstmt.setString(1, name);
+			pstmt.setString(2, title);
+			rs = pstmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 반환 및 닫기
+	public void close() {
+		try {
+			if (set != null) {
+				set.close();
+			}
+			if (pstmt != null) {
+				pstmt.close();
+			}
+			if (con != null) {
+				con.close();
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 로그인
+	public void login(JTextField tf, JPasswordField pf) {
+		String login = "select * from user where id = ? and pwd= ?";
+		try {
+			pstmt = con.prepareStatement(login);
+			pstmt.setString(1, tf.getText());
+			pstmt.setString(2, pf.getText());
+			this.set = pstmt.executeQuery();
+		} catch (SQLException e) {
+
+		}
+	}
+
+	// 발라드 목록
+	public DefaultTableModel ballad() throws SQLException {
+
+		String header[] = { "가수", "제목", "장르", "선택" };
+		Object contents[][] = new Object[0][4];
+		DefaultTableModel model = new DefaultTableModel(contents, header) {
+			public Class getColumnClass(int col) {
+				return getValueAt(0, col).getClass();
+			}
+		};
+		this.connect();
+		String ballad = "select * from music where genre = ?";
+		try {
+			pstmt = con.prepareStatement(ballad);
+			pstmt.setString(1, "발라드");
+			this.set = pstmt.executeQuery();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		while (Table.set.next()) {
+			String name = Table.set.getString("name");
+			String title = Table.set.getString("title");
+			String genre = Table.set.getString("genre");
+
+			Object data[] = { name, title, genre, Boolean.FALSE };
+			model.addRow(data);
+		}
+		this.close();
+		return model;
+	}
+
+	// 힙합 목록
+	public DefaultTableModel hiphop() throws SQLException {
+
+		String header[] = { "가수", "제목", "장르", "선택" };
+		Object contents[][] = new Object[0][4];
+		DefaultTableModel model = new DefaultTableModel(contents, header) {
+			public Class getColumnClass(int col) {
+				return getValueAt(0, col).getClass();
+			}
+		};
+		this.connect();
+		String ballad = "select * from music where genre = ?";
+		try {
+			pstmt = con.prepareStatement(ballad);
+			pstmt.setString(1, "힙합");
+			this.set = pstmt.executeQuery();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		while (Table.set.next()) {
+			String name = Table.set.getString("name");
+			String title = Table.set.getString("title");
+			String genre = Table.set.getString("genre");
+
+			Object data[] = { name, title, genre, Boolean.FALSE };
+			model.addRow(data);
+		}
+		this.close();
+		return model;
+	}
+
+	// 음악 지우기
+	public void delete(String name, String title) {
+		String delete = "delete from music where name=? and title=?";
+		try {
+			pstmt = con.prepareStatement(delete);
+			pstmt.setString(1, name);
+			pstmt.setString(2, title);
+			rs = pstmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	// 유저 닉네임을 가지고 플레이리스트 테이블 만들기
+	public void create(String nickName) {
+		String create = "create table " + nickName + " (name varchar(20), title varchar(20), genre varchar(20))";
+		try {
+			pstmt = con.prepareStatement(create);
+			rs = pstmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	// 플레이 리스트에 음악 추가
+	public void addList(String nickName, String name, String title, String genre) {
+		String add = "insert into " + nickName + " values" + " (?,?,?)";
+		try {
+			pstmt = con.prepareStatement(add);
+			pstmt.setString(1, name);
+			pstmt.setString(2, title);
+			pstmt.setString(3, genre);
+			this.rs = pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	// 유저 등급 확인
+	public void checkLevel(String nickName) {
+		String level = "select*from user where nickname=?";
+		try {
+			pstmt = con.prepareStatement(level);
+			pstmt.setString(1, nickName);
+			this.set = pstmt.executeQuery();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	// 프리미엄 회원 신청자 목록
+	public void addLevel(String nickName) {
+		String add = "insert into level values(?)";
+		try {
+			pstmt = con.prepareStatement(add);
+			pstmt.setString(1, nickName);
+			this.rs = pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	//프리미엄 회원으로 변경
+	public void levelUp() {
+		String up = "update user set level = ? where nickname=(select * from level)";
+		try {
+			pstmt = con.prepareStatement(up);
+			pstmt.setString(1, "프리미엄회원");
+			this.rs = pstmt.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	//프리미엄 신청 목록 지우기
+	public void levelDelete() {
+		String delete = "delete from level";
+		try {
+			pstmt = con.prepareStatement(delete);
+			rs = pstmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	//회원탈퇴
+	public void withdrawal(String nickName) {
+		String withdrawal = "delete from user where nickname= ?";
+		try {
+			pstmt = con.prepareStatement(withdrawal);
+			pstmt.setString(1, nickName);
+			rs = pstmt.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+}
