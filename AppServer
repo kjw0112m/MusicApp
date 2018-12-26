@@ -1,0 +1,132 @@
+import java.net.*;
+import java.io.*;
+import java.util.*;
+
+
+
+public class AppServer {
+
+	HashMap clients; // 클라이언트 분류를 위한 HashMap
+	TreeSet joinList; // 참여목록을 위해 이름을 저장하는 TreeSet
+
+	AppServer() {
+		clients = new HashMap();
+		Collections.synchronizedMap(clients); // 정확히 이해는 못했지만 다중 소켓을 위해 동기화를 시켜주는 메소드
+
+		joinList = new TreeSet();
+		Collections.synchronizedSet(joinList);
+
+	}
+
+	public void start() {
+
+		ServerSocket serverSocket = null;
+		Socket socket = null;
+
+		try {
+			serverSocket = new ServerSocket(7777);
+			System.out.println("서버 시작");
+
+			while (true) {
+				socket = serverSocket.accept(); // 클라이언트 접속을 기다림
+				System.out.println("[" + socket.getInetAddress() + ":" + socket.getPort() + "]" + "에서 접속하였습니다.");
+				// 접속시에 서버 cmd창에서 띄워줌
+				ServerReceiver thread = new ServerReceiver(socket);
+				thread.start();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+
+		}
+	}
+
+	void sendAll(String msg) { // 메시지 출력을 위한 메소드
+		Iterator it = clients.keySet().iterator(); // HashMap리스트 출력을 위한 it 선언
+
+		while (it.hasNext()) {
+			try {
+				DataOutputStream out = (DataOutputStream) clients.get(it.next());
+				out.writeUTF(msg);
+				out.flush();
+			} catch (IOException e) {
+
+			}
+		}
+	}
+
+	void joinUser() { // 채팅방 참여시 이름을 출력하기 위한 메소드
+		Iterator it = joinList.iterator();
+		while (it.hasNext()) {
+			String user = (String) it.next();
+			sendAll("[join];" + user);
+		}
+	}
+
+	void outUser() { // 채팅방을 나갈시 이름을 제거하기 위한 메소드
+		Iterator it = joinList.iterator();
+		int i = 0;
+		while (it.hasNext()) {
+			String user = (String) it.next();
+			sendAll(i + "[exit];" + user);
+			i++;
+		}
+	}
+
+	public static void main(String args[]) {
+		new AppServer().start();
+	}
+
+	class ServerReceiver extends Thread {
+		Socket socket;
+		DataInputStream in;
+		DataOutputStream out;
+
+		ServerReceiver(Socket socket) {
+			this.socket = socket;
+			try {
+				in = new DataInputStream(socket.getInputStream());
+				out = new DataOutputStream(socket.getOutputStream());
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		public void run() {
+			String name = "";
+
+			try {
+				name = in.readUTF();
+
+				clients.put(name, out); // 이름과 DataOutputStream형을 저장
+				joinList.add(name); // 이름을 Tree에 저장
+
+				System.out.println("현재 서버접속자 수:  " + clients.size() + "명");
+				sendAll(name + "님이 입장하였습니다.");
+
+				joinUser();
+				while (in != null) {
+
+					sendAll(in.readUTF());
+
+				}
+
+			} catch (IOException ignore) {
+			} finally {
+				//채팅방을 종료하면 제거해준다.
+				clients.remove(name);
+				joinList.remove(name);
+				
+				//메시지를 출력
+				sendAll(name + "님이 나갔습니다.");
+				outUser();
+				
+				//서버상에도 출력
+				System.out.println("[" + socket.getInetAddress() + ":" + socket.getPort() + "]" + "에서 접속을 종료하였습니다.");
+				System.out.println("현재 서버접속자 수: " + clients.size() + "명");
+
+			}
+		}
+	}
+
+}
