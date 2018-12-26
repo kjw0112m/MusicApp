@@ -1,0 +1,84 @@
+import java.awt.event.*;
+import java.sql.SQLException;
+
+import javax.swing.*;
+
+
+
+public class Login extends JFrame implements ActionListener {
+
+	JButton join; // 회원가입
+	JButton login; // 로그인
+	JTextField tf;
+	JPasswordField pf;
+	Table t = new Table(); // Table 클래스 선언
+	public static String name; // 닉네임을 저장하기 위한 정적 필드
+
+	// 액션이벤트
+	public void actionPerformed(ActionEvent e) {
+		JButton b = (JButton) e.getSource();
+		if (b == join) { // 회원가입 버튼을 누르면 회원가입 창 열기
+			new SignUp();
+		} else { // 로그인 버튼을 누를 시
+			t.connect(); // 드라이버 연결
+			t.login(tf, pf); // 로그인을 위한 sql문 연결, 아이디와 패스워드를 조회
+
+			try {
+				if (Table.set.isBeforeFirst()) { // sql문 반환 후 커서가 첫번째 열에 있는지 확인
+					while (Table.set.next()) {
+						name = Table.set.getString("nickname"); // 닉네임을 정적 필드 name에 대입
+					}
+
+					this.dispose(); // 로그인창 닫기
+					new MusicApp().musicApp(); // 뮤직 앱 열기
+				} else {
+					JOptionPane.showMessageDialog(this, "아이디 및 패스워드가 틀립니다.");
+				}
+			} catch (SQLException e1) {
+			}
+			t.close();
+		}
+	}
+
+	public void login() {
+		//프레임, 패널 및 컴포넌트 설정
+		this.setTitle("로그인");
+		this.setSize(300, 150);
+		this.setResizable(false);
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+		JPanel pC = new JPanel();
+
+		this.add(pC);
+
+		pC.setLayout(null);
+
+		JLabel id = new JLabel(" 아이디");
+		id.setBounds(10, 10, 80, 25);
+		JLabel pwd = new JLabel("비밀번호");
+		pwd.setBounds(10, 40, 80, 25);
+		pC.add(id);
+		pC.add(pwd);
+
+		tf = new JTextField();
+		tf.setBounds(100, 10, 160, 25);
+		pf = new JPasswordField();
+		pf.setBounds(100, 40, 160, 25);
+		pf.setEchoChar('*');	//패스워드 필드에 입력되는 문자를 *로 표시
+		pC.add(tf);
+		pC.add(pf);
+
+		join = new JButton("회원가입");
+		login = new JButton("로그인");
+		login.setBounds(160, 80, 100, 25);
+		join.setBounds(20, 80, 100, 25);
+		pC.add(join);
+		pC.add(login);
+		setVisible(true);
+		
+		//리스너 추가
+		join.addActionListener(this);
+		login.addActionListener(this);
+		
+	}
+}
