@@ -1,0 +1,40 @@
+ 
+import javax.swing.table.*;
+
+
+import java.sql.*;
+
+public class MusicList {
+	Table t = new Table();
+	public DefaultTableModel model;
+	
+	//데이터베이스 music 테이블에서 모든 열을 model에 넣어주기
+	public MusicList() throws SQLException {
+		String header[] = {"가수", "제목", "장르","선택"};
+		Object contents[][] = new Object[0][4];
+		model=new DefaultTableModel(contents,header)
+		{
+			public Class getColumnClass(int col) {
+				return getValueAt(0, col).getClass();
+			}
+			public boolean isCellEditable(int row, int column) {
+				if(column>=3)
+					return true;
+				else
+				return false;
+			}
+		};
+		t.connect();
+		t.musicSelect();
+		
+		while(Table.set.next()) {
+			String name = Table.set.getString("name");
+			String title = Table.set.getString("title");
+			String genre = Table.set.getString("genre");
+			
+			Object data[] = {name,title,genre,Boolean.FALSE};
+			model.addRow(data);		//열추가
+		}
+		t.close();
+	}
+}
