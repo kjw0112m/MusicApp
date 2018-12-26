@@ -1,0 +1,172 @@
+
+import java.awt.*;
+import javax.swing.*;
+
+
+
+import java.awt.event.*;
+import java.sql.SQLException;
+
+public class SignUp extends JFrame implements ActionListener {
+
+	JButton check1; // 닉네임 중복확인 버튼
+	JButton check2; // 아이디 중복확인 버튼
+	JButton join;
+	JButton cancel;
+	JTextField tf1, tf2, tf3;
+	JPasswordField pf;
+	Table t = new Table();
+
+	public SignUp() {
+		this.setTitle("회원가입");
+		this.setSize(380, 300);
+		this.setResizable(false);
+
+		JPanel pC = new JPanel();
+
+		this.add(pC);
+
+		pC.setLayout(null);
+
+		JLabel name = new JLabel("이름");
+		name.setBounds(10, 10, 80, 25);
+		JLabel nick = new JLabel("닉네임");
+		nick.setBounds(10, 50, 80, 25);
+		JLabel id = new JLabel("아이디");
+		id.setBounds(10, 90, 80, 25);
+		JLabel pwd = new JLabel("비밀번호");
+		pwd.setBounds(10, 130, 80, 25);
+		JLabel tip1 = new JLabel("(단, 비밀번호는 숫자 4자리로 하시오.)");
+		tip1.setBounds(10, 165, 230, 20);
+		JLabel tip2 = new JLabel("(단, 닉네임은 영어 소문자로만 하시오.)");
+		tip2.setBounds(10, 190, 230, 20);
+		pC.add(name);
+		pC.add(nick);
+		pC.add(id);
+		pC.add(pwd);
+		pC.add(tip1);
+		pC.add(tip2);
+
+		tf1 = new JTextField();
+		tf1.setBounds(100, 10, 160, 25);
+		tf2 = new JTextField();
+		tf2.setBounds(100, 50, 160, 25);
+		tf3 = new JTextField();
+		tf3.setBounds(100, 90, 160, 25);
+		pf = new JPasswordField();
+		pf.setBounds(100, 130, 160, 25);
+		pC.add(tf1);
+		pC.add(tf2);
+		pC.add(tf3);
+		pC.add(pf);
+
+		join = new JButton("회원가입");
+		cancel = new JButton("취소");
+		cancel.setBounds(160, 240, 100, 25);
+		join.setBounds(20, 240, 100, 25);
+		pC.add(join);
+		pC.add(cancel);
+
+		check1 = new JButton("중복확인");
+		check2 = new JButton("중복확인");
+		check1.setBounds(270, 50, 100, 25);
+		check2.setBounds(270, 90, 100, 25);
+		pC.add(check1);
+		pC.add(check2);
+
+		// 리스너 추가
+		join.addActionListener(this);
+		cancel.addActionListener(this);
+		check1.addActionListener(this);
+		check2.addActionListener(this);
+		setVisible(true);
+	}
+
+	// 닉네임 조건을 확인하기 위한 반환형이 boolean인 메소드
+	public boolean checkNickName(String nickName) {
+
+		char check;
+
+		for (int i = 0; i < nickName.length(); i++) { // 닉네임 길이만큼 반복
+
+			check = nickName.charAt(i); // 닉네임을 한글자씩
+
+			if (check >= 0x61 && check <= 0x7A) { // 영어 소문자인지 확인
+
+			} else {
+				return false; // 영어소문자가 아니면 false를 반환
+			}
+		}
+		return true;
+	}
+
+	public void actionPerformed(ActionEvent e) {
+
+		JButton b = (JButton) e.getSource();
+		if (b == join) {
+			t.connect();
+			t.checkNick(tf2);
+			try {
+				if (Table.set.isBeforeFirst()) { // 커서가 첫번째 열에 위치하는지 확인
+					JOptionPane.showMessageDialog(this, "닉네임 중복확인을 해주세요.");
+				}
+			} catch (SQLException e1) {
+			}
+			t.checkID(tf3);
+			try {
+				if (Table.set.isBeforeFirst()) {
+					JOptionPane.showMessageDialog(this, "아이디 중복확인을 해주세요.");
+				}
+			} catch (SQLException e1) {
+			}
+
+			if (tf1.getText().equals("") || tf2.getText().equals("") || tf3.getText().equals("")) { // 텍스트창이 하나라도 비어있으면
+				JOptionPane.showMessageDialog(this, "입력되지 않은 창이 있습니다.");
+			} else if (!checkNickName(tf2.getText())) {
+				JOptionPane.showMessageDialog(this, "닉네임 조건을 확인해주세요.");
+			} else {
+				t.userAdd(tf1, tf2, tf3, pf);
+				if (Table.rs != 0) {
+					this.dispose();
+					JOptionPane.showMessageDialog(this, "회원가입이 완료되었습니다.");
+					t.create(tf2.getText());
+				}
+			}
+			t.close();
+
+		} else if (b == cancel) {
+			this.dispose();
+		} else if (b == check1) {
+			t.connect();
+			t.checkNick(tf2);
+			try {
+				if (Table.set.isBeforeFirst()) {
+					JOptionPane.showMessageDialog(this, "사용중인 닉네임입니다.");
+				} else if (tf2.getText().equals("")) {
+					JOptionPane.showMessageDialog(this, "닉네임을 입력해주세요.");
+				} else if (!checkNickName(tf2.getText())) {
+					JOptionPane.showMessageDialog(this, "닉네임 조건을 확인해주세요.");
+				} else {
+					JOptionPane.showMessageDialog(this, "사용가능한 닉네임입니다.");
+				}
+			} catch (HeadlessException | SQLException e1) {
+			}
+			t.close();
+		} else if (b == check2) {
+			t.connect();
+			t.checkID(tf3);
+			try {
+				if (Table.set.isBeforeFirst()) {
+					JOptionPane.showMessageDialog(this, "사용중인 아이디입니다.");
+				} else if (tf3.getText().equals("")){
+				       JOptionPane.showMessageDialog(this, "아이디를 입력해주세요.");
+				} else {
+					JOptionPane.showMessageDialog(this, "사용가능한 아이디입니다.");
+				}
+			} catch (HeadlessException | SQLException e1) {
+			}
+			t.close();
+		}
+	}
+
+}
