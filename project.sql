@@ -1,0 +1,15 @@
+create database musicapp;
+use musicapp;
+create table music(name varchar(10), title varchar(20), genre varchar(10));
+create table user(name varchar(10), nickname varchar(15) unique key, id varchar(20) unique key, pwd varchar(20), level varchar(10));
+create table level(nickname varchar(15) primary key);
+insert into music values('벤', '180도', '발라드');
+insert into music values('제니', 'SOLO', '힙합');
+insert into music values('MINO', '아낙네', '힙합');
+insert into music values('김범수', '첫눈처럼 너에게 가겠다', '발라드');
+insert into music values('아이유', '삐삐', '발라드');
+insert into music values('벤', '열애중', '발라드');
+insert into music values('루피', 'SAVE', '힙합');
+insert into music values('아이유', '밤편지', '발라드');
+insert into music values('ph-1', 'homebody', '힙합');
+insert into music values('다이나믹듀오', '고백', '힙합');
