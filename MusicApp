@@ -1,0 +1,273 @@
+import java.awt.*;
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.table.*;
+
+
+import java.awt.event.*;
+import java.sql.*;
+import java.io.*;
+
+public class MusicApp extends Login implements ActionListener, KeyListener, MouseListener {
+
+	JButton search;
+	JButton chat;
+	JButton play;
+	JButton pause;
+	JButton stop;
+	JButton delete;
+
+	JScrollPane sp;
+	JTable table;
+	JPanel down; // 플레이 리스트를 추가할 패널
+
+	JMenuItem logout;
+	JMenuItem premium;
+	JMenuItem withdrawal;
+
+	JTextField tf;
+
+	Chat c;
+
+	public void musicApp() {
+		// 프레임, 패널 및 컴포넌트 설정
+		this.setTitle("동양뮤직");
+		this.setSize(360, 540);
+		this.setResizable(false);
+		setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+		// 메뉴 배치
+		JMenuBar mb = new JMenuBar();
+		JMenu menu = new JMenu("메뉴");
+		logout = new JMenuItem("로그아웃");
+		premium = new JMenuItem("프리미엄 신청");
+		withdrawal = new JMenuItem("회원탈퇴");
+		menu.add(premium);
+		menu.add(logout);
+		menu.add(withdrawal);
+		mb.add(menu);
+		this.setJMenuBar(mb);
+
+		// 패널 및 컴포넌트 배치
+		JPanel pC = new JPanel(new GridLayout(2, 0));
+		this.add(pC);
+
+		JPanel up = new JPanel(new FlowLayout());
+		up.setLayout(null);
+		down = new JPanel(new BorderLayout());
+
+		pC.add(up);
+		pC.add(down);
+
+		chat = new JButton("채팅방");
+		chat.setBounds(40, 40, 100, 50);
+		search = new JButton("노래검색");
+		search.setBounds(210, 40, 100, 50);
+		play = new JButton(new ImageIcon("play.png")); // 이미지 넣기
+		play.setBounds(10, 150, 70, 30);
+		pause = new JButton(new ImageIcon("pause.png"));
+		pause.setBounds(100, 150, 70, 30);
+		stop = new JButton(new ImageIcon("stop.png"));
+		stop.setBounds(190, 150, 70, 30);
+		delete = new JButton(new ImageIcon("delete.png"));
+		delete.setBounds(280, 150, 70, 30);
+
+		tf = new JTextField();
+		tf.setBounds(0, 200, 360, 20);
+		tf.setEditable(false); // 수정 불가
+
+		this.update(); // 데이터베이스 테이블 연동
+
+		up.add(chat);
+		up.add(search);
+		up.add(play);
+		up.add(pause);
+		up.add(stop);
+		up.add(delete);
+		up.add(tf);
+		down.add(sp);
+
+		// 리스너 추가
+		search.addActionListener(this);
+		chat.addActionListener(this);
+		this.addKeyListener(this);
+		delete.addActionListener(this);
+		logout.addMouseListener(this);
+		premium.addMouseListener(this);
+		withdrawal.addMouseListener(this);
+		play.addActionListener(this);
+		stop.addActionListener(this);
+		pause.addActionListener(this);
+
+		// 프레임에만 포커스 설정
+		this.setFocusable(true);
+
+		// 포커스 해제하기
+		play.setFocusable(false);
+		stop.setFocusable(false);
+		delete.setFocusable(false);
+		pause.setFocusable(false);
+		chat.setFocusable(false);
+		search.setFocusable(false);
+
+		setVisible(true);
+	}
+
+	public void actionPerformed(ActionEvent e) {
+		JButton b = (JButton) e.getSource();
+		if (b == search) {
+			try {
+				new MusicSearch();
+				tf.setText("");
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+		} else if (b == chat) {
+			c = new Chat();
+			c.chat();
+			tf.setText("");
+		} else if (b == delete) {
+			int i = table.getSelectedRow();	//플레이리스트 테이블에서 선택된 행을 가져옴
+			t.connect();	//드라이버 연결
+			t.deleteList(Login.name, (String) table.getValueAt(i, 0), (String) table.getValueAt(i, 1));	//선택된 행에서 노래와 제목 열을 인자로 sql문 메소드 선언
+			t.close();
+			
+			//플레이리스트 갱신
+			this.update();
+			down.removeAll();
+			down.setVisible(false);
+			down.add(sp);
+			down.setVisible(true);
+			tf.setText("");
+		} else if (b == play) {
+			this.play();
+		} else if (b == pause) {
+			tf.setText("                                     일시정지");
+		} else {
+			tf.setText("                                      정지");
+		}
+	}
+	
+	//테이블 가운데 정렬을 위한 메소드
+	public void sort() {
+		DefaultTableCellRenderer dtcr = new DefaultTableCellRenderer();
+		dtcr.setHorizontalAlignment(SwingConstants.CENTER);
+		TableColumnModel tcmList = table.getColumnModel();
+
+		for (int i = 0; i < tcmList.getColumnCount(); i++) {
+			tcmList.getColumn(i).setCellRenderer(dtcr);
+		}
+	}
+	
+	//플레이 리스트 갱신
+	public void update() {
+		try {
+			table = new JTable(new PlayList().model);
+			table.getTableHeader().setReorderingAllowed(false);
+			table.setModel(new PlayList().model);
+			sp = new JScrollPane(table);
+			this.sort();
+		} catch (SQLException e) {
+		}
+	}
+	
+	// 재생 버튼을 누를시 선언 할 메소드
+	public void play() {
+		String level = null;
+
+		t.connect();
+		t.checkLevel(Login.name);
+		try {
+			while (Table.set.next()) {
+				level = Table.set.getString("level");
+			}
+		} catch (SQLException e) {
+		}
+		t.close();
+		int i = table.getSelectedRow();	//선택된 행을 가져옴
+		if (level.equals("프리미엄회원")) {	//뮤직앱을 사용하는 회원이 프리미엄일경우
+			if (i >= 0)
+				tf.setText((String) table.getValueAt(i, 0) + " - " + (String) table.getValueAt(i, 1));
+			else
+				JOptionPane.showMessageDialog(this, "노래를 선택해주세요.");
+		} else {	//일반회원일 경우
+			if (i >= 0)
+				tf.setText((String) table.getValueAt(i, 0) + " - " + (String) table.getValueAt(i, 1) + "1분 재생..");
+			else
+				JOptionPane.showMessageDialog(this, "노래를 선택해주세요.");
+		}
+	}
+
+	public void keyTyped(KeyEvent e) {
+	}
+
+	public void keyPressed(KeyEvent e) {
+	}
+	
+	//키보드를 누를시
+	public void keyReleased(KeyEvent e) {
+		if (e.getKeyCode() == 82) {	//키보드 r키를 누를 시
+			//테이블 새로고침
+			this.update();
+			down.removeAll();
+			down.setVisible(false);
+			down.add(sp);
+			down.setVisible(true);
+		}
+	}
+
+	public void mouseClicked(MouseEvent e) {
+	}
+
+	public void mouseEntered(MouseEvent e) {
+	}
+
+	public void mouseExited(MouseEvent e) {
+	}
+	
+	// 마우스 누른 순간
+	public void mousePressed(MouseEvent e) {
+		JMenuItem item = (JMenuItem) e.getSource();
+		if (item == logout) {
+			try {	
+				this.dispose();	//뮤직앱 창 닫기
+				new Login().login();
+				c.dispose();
+				c.client.receiver.interrupt();
+				c.client.socket.close();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			} catch (NullPointerException e2){
+			}
+			new Login().login();	//로그인창 열기
+		} else if (item == premium) {
+			String level = null;
+			t.connect();
+			t.checkLevel(Login.name);
+			try {
+				while (Table.set.next()) {
+					level = Table.set.getString("level");
+				}
+			} catch (SQLException e1) {
+			}
+			if (level.equals("일반회원")) {		//등급이 일반 회원인지 확인
+				JOptionPane.showMessageDialog(this, "프리미엄 회원 신청이 완료되었습니다.");
+				t.addLevel(Login.name);
+			} else {	//이미 프리미엄 회원이면
+				JOptionPane.showMessageDialog(this, "고객님은 프리미엄 회원 입니다.");
+			}
+			t.close();
+		} else {	//회원탈퇴를 클릭시
+			t.connect();
+			t.checkLevel(Login.name);
+			if (Table.rs != 0) {
+				JOptionPane.showMessageDialog(this, "회원탈퇴가 완료되었습니다.");
+			}
+			t.close();
+		}
+	}
+
+	public void mouseReleased(MouseEvent e) {
+	}
+
+}
